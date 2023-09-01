@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<title>Task App</title>
+		<meta name="theme-color" content="#000" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link rel="stylesheet" href="./styles/index.css" />
+	</head>
+	<body>
+		<main>
+			<h1 class="title-app">Task App</h1>
+			<div class="welcome-user-title">
+				<h2>Bienvenido, Jefferson</h2>
+				<button class="add-task-button">Add new task</button>
+			</div>
+			<form class="add-task-form hidden">
+				<fieldset>
+					<legend><h3>Add new task</h3></legend>
+					<div class="input-group">
+						<input type="text" id="name" />
+						<label for="name">Name</label>
+					</div>
+					<div class="input-group">
+						<input type="text" id="description" />
+						<label for="description">Description</label>
+					</div>
+					<div class="input-group input-group-active">
+						<input type="date" id="date" />
+						<label for="date">Date</label>
+					</div>
+					<div class="input-group input-group-active">
+						<input type="time" id="time" />
+						<label for="time">Time</label>
+					</div>
+					<div class="input-group-submit">
+						<input type="reset" value="Clear" />
+						<input type="submit" value="Add task" />
+					</div>
+				</fieldset>
+			</form>
+			<section class="task-list">
+				<article>
+					<div class="task-name">
+						<h3>Task name</h3>
+						<div class="task-date">
+							<small>11-25-2023</small>
+							<small>•</small>
+							<small>15:00</small>
+						</div>
+					</div>
+					<p>
+						Task description: Lorem ipsum dolor sit amet consectetur adipisicing elit.
+						Quia quae ea est itaque
+					</p>
+					<button class="delete-task">Delete</button>
+				</article>
+			</section>
+		</main>
+		<script src="./js/index.js"></script>
+	</body>
+</html>
