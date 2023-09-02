@@ -11,7 +11,7 @@
 		<main>
 			<h1 class="title-app">Task App</h1>
 			<div class="welcome-user-title">
-				<h2>Bienvenido, Jefferson</h2>
+				<h2></h2>
 				<button class="add-task-button">Add new task</button>
 			</div>
 			<form class="add-task-form hidden">
@@ -35,26 +35,32 @@
 					</div>
 					<div class="input-group-submit">
 						<input type="reset" value="Clear" />
-						<input type="submit" value="Add task" />
+						<input type="submit" value="Add task" id="add-task-submit" />
 					</div>
 				</fieldset>
 			</form>
 			<section class="task-list">
-				<article>
-					<div class="task-name">
-						<h3>Task name</h3>
-						<div class="task-date">
-							<small>11-25-2023</small>
-							<small>•</small>
-							<small>15:00</small>
+				<h3 class="not-task-text hidden">No task yet...</h3>
+				<template id="task-template">
+					<article>
+						<div class="task-name">
+							<h3>Task name</h3>
+							<div class="task-date">
+								<small class="task-date-item">11-25-2023</small>
+								<small>•</small>
+								<small class="task-time-item">15:00</small>
+							</div>
 						</div>
-					</div>
-					<p>
-						Task description: Lorem ipsum dolor sit amet consectetur adipisicing elit.
-						Quia quae ea est itaque
-					</p>
-					<button class="delete-task">Delete</button>
-				</article>
+						<p>
+							Task description: Lorem ipsum dolor sit amet consectetur adipisicing elit.
+							Quia quae ea est itaque
+						</p>
+						<div class="button-group">
+							<button class="edit-task">Update</button>
+							<button class="delete-task">Delete</button>
+						</div>
+					</article>
+				</template>
 			</section>
 		</main>
 		<script src="./js/index.js"></script>
