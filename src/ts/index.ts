@@ -1,4 +1,5 @@
 const d: Document = document,
+	w = window,
 	$addTaskForm: HTMLFormElement | null = d.querySelector('.add-task-form'),
 	$tasksList: HTMLElement | null = d.querySelector('.task-list'),
 	$usernameContent: HTMLElement | null = d.querySelector('.welcome-user-title h2'),
@@ -7,7 +8,8 @@ const d: Document = document,
 	) as HTMLTemplateElement,
 	$sectionButton: HTMLButtonElement | null = d.querySelector('.add-task-button'),
 	$addTaskSubmit: HTMLInputElement | null = d.querySelector('#add-task-submit'),
-	$noTask: HTMLElement | null = d.querySelector('.not-task-text')
+	$noTask: HTMLElement | null = d.querySelector('.not-task-text'),
+	$totalTasks: HTMLElement | null = d.querySelector('.total-tasks span')
 
 function handleAddTask(): void {
 	let buttonContent: string,
@@ -53,18 +55,25 @@ function getUser(): void {
 
 function getTaskId(): number {
 	const tasks: string = localStorage.getItem('tasks') || ''
-	let array: object[] = [],
+	let array: Task[] = [],
 		id = 0
 	if (tasks.length > 0) {
 		array = JSON.parse(tasks)
 	}
 	if (array.length > 0) {
-		id = array.length
+		let max = -1
+		array.forEach((task: Task) => {
+			max = Math.max(task.id)
+		})
+		id = max + 1
+	} else {
+		id = 0
 	}
+	console.log(id)
 	return id
 }
 
-function getNewTasksValues(): object[] {
+function getNewTasksValues(): Task[] {
 	const inputsHTML: NodeList | undefined =
 		$addTaskForm?.querySelectorAll('.input-group input')
 	let data: object = {},
@@ -83,12 +92,12 @@ function getNewTasksValues(): object[] {
 	return newData
 }
 
-function getTasksValues(): object[] {
+function getTasksValues(): Task[] {
 	const old: string | null = localStorage.getItem('tasks')
-	let _new: object[] = getNewTasksValues(),
-		oldArray: object[] = [],
+	let _new: Task[] = getNewTasksValues(),
+		oldArray: Task[] = [],
 		newArray: object[] = [],
-		joined: object[] = []
+		joined: Task[] = []
 
 	if (old && old.length > 0) {
 		oldArray = JSON.parse(old)
@@ -101,16 +110,58 @@ function getTasksValues(): object[] {
 }
 
 function handleNewTaks(): void {
-	const tasks: object[] = getTasksValues(),
+	const tasks: Task[] = getTasksValues(),
 		json: string = JSON.stringify(tasks)
-	console.log(json)
 	localStorage.setItem('tasks', json)
-	$addTaskForm?.reset()
 	if (!$noTask?.classList.contains('hidden')) {
 		$noTask?.classList.add('hidden')
 	}
-	loadSavedTasks()
+	updateStoredTasks()
+	if ($totalTasks) {
+		$totalTasks.textContent = `${tasks.length}`
+	}
+	$addTaskForm?.reset()
 }
+//fix this
+function updateStoredTasks(): void {
+	const tasks: Task[] = getNewTasksValues(),
+		$task: NodeListOf<HTMLElement> | undefined = $tasksList?.querySelectorAll('article')
+
+	let template: DocumentFragment | null = null
+	if ($task) {
+		if ($taskTemplate) {
+			template = $taskTemplate.content
+		}
+		const $taskListArray: HTMLElement[] = Array.from($task)
+		$taskListArray.forEach((taskHTML) => {
+			const editId: HTMLElement | null = taskHTML.querySelector('.edit-task')
+			if (editId && template) {
+				checkEditUpdate(editId, tasks, template)
+			}
+		})
+	}
+}
+
+function checkEditUpdate(editId: HTMLElement, tasks: Task[], template: DocumentFragment) {
+	if (editId !== null) {
+		const idString: string = editId.dataset?.id || '-1',
+			id = parseInt(idString)
+		if (id !== null || id !== undefined) {
+			tasks.forEach((task) => {
+				if (task.id !== id) {
+					const $clone = template?.cloneNode(true) as HTMLElement
+					if ($clone) {
+						appendTask($clone, task)
+					}
+					$tasksList?.appendChild($clone)
+				} else {
+					console.log('is update!')
+				}
+			})
+		}
+	}
+}
+
 interface Task {
 	id: number
 	name: string
@@ -128,6 +179,38 @@ function getSavedTasks(): Task[] {
 	return json
 }
 
+function appendTask(el: HTMLElement, task: Task): HTMLElement {
+	const article = el.querySelector('article'),
+		name = el.querySelector('h3'),
+		description = el.querySelector('p'),
+		date = el.querySelector('.task-date-item'),
+		time = el.querySelector('.task-time-item'),
+		deleteButton = el.querySelector('.delete-task'),
+		editButton = el.querySelector('.edit-task')
+	if (article) {
+		article.setAttribute('data-id', `${task.id}`)
+	}
+	if (name) {
+		name.textContent = task.name || 'No named'
+	}
+	if (description) {
+		description.textContent = task.description || 'No description'
+	}
+	if (date) {
+		date.textContent = task.date || '00/00/00'
+	}
+	if (time) {
+		time.textContent = task.time || '--:--'
+	}
+	if (deleteButton) {
+		deleteButton.setAttribute('data-id', `${task.id}`)
+	}
+	if (editButton) {
+		editButton.setAttribute('data-id', `${task.id}`)
+	}
+	return el
+}
+
 function loadSavedTasks(): void {
 	const tasks: Task[] = getSavedTasks(),
 		$fragment: DocumentFragment = d.createDocumentFragment()
@@ -140,30 +223,7 @@ function loadSavedTasks(): void {
 		tasks.forEach((task: Task, index: number) => {
 			const $clone = template?.cloneNode(true) as HTMLElement
 			if ($clone) {
-				const name = $clone.querySelector('h3'),
-					description = $clone.querySelector('p'),
-					date = $clone.querySelector('.task-date-item'),
-					time = $clone.querySelector('.task-time-item'),
-					deleteButton = $clone.querySelector('.delete-task'),
-					editButton = $clone.querySelector('.edit-task')
-				if (name) {
-					name.textContent = task.name || 'No named'
-				}
-				if (description) {
-					description.textContent = task.description || 'No description'
-				}
-				if (date) {
-					date.textContent = task.date || '00/00/00'
-				}
-				if (time) {
-					time.textContent = task.time || '--:--'
-				}
-				if (deleteButton) {
-					deleteButton.setAttribute('data-id', `${task.id}`)
-				}
-				if (editButton) {
-					editButton.setAttribute('data-id', `${task.id}`)
-				}
+				appendTask($clone, task)
 			}
 			$fragment.appendChild($clone)
 		})
@@ -171,10 +231,16 @@ function loadSavedTasks(): void {
 	} else {
 		$noTask?.classList.remove('hidden')
 	}
+	if ($totalTasks) {
+		const $parent = $totalTasks.parentElement
+		$totalTasks.textContent = `${tasks.length}`
+		if ($parent && tasks.length > 0) {
+			$parent.classList.remove('hidden')
+		}
+	}
 }
 
 function editTask(id: number): void {
-	handleAddTask()
 	if ($addTaskForm) {
 		const name: HTMLInputElement | null = $addTaskForm.querySelector('#name'),
 			description: HTMLInputElement | null = $addTaskForm.querySelector('#description'),
@@ -191,7 +257,6 @@ function editTask(id: number): void {
 		}
 		const task: Task = tasks.find((task: Task) => task.id === id) || DEFAULT_TASK
 		if (task.id !== -1) {
-			console.log(task)
 			if (name) {
 				name.value = task.name
 			}
@@ -207,8 +272,40 @@ function editTask(id: number): void {
 		}
 	}
 	if ($addTaskSubmit) {
+		const parentInputs: NodeListOf<HTMLElement> | undefined =
+			$addTaskForm?.querySelectorAll('.input-group')
+
+		if (parentInputs) {
+			parentInputs.forEach((parent) => {
+				parent.classList.add('input-group-filled')
+			})
+		}
 		$addTaskSubmit.value = 'Update'
 		$addTaskSubmit.setAttribute('data-update-id', `${id}`)
+	}
+	handleAddTask()
+}
+
+function deleteTask(id: number): void {
+	const tasks: Task[] = getSavedTasks(),
+		filter: Task[] = tasks.filter((task) => task.id !== id),
+		json: string = JSON.stringify(filter)
+	localStorage.setItem('tasks', json)
+
+	if ($tasksList) {
+		const $task: HTMLElement | null = $tasksList.querySelector(`[data-id="${id}"]`)
+
+		if ($task) {
+			$tasksList.removeChild($task)
+		}
+	}
+	if (tasks.length <= 1) {
+		$noTask?.classList.remove('hidden')
+		const $parent = $totalTasks?.parentElement
+		$parent?.classList.add('hidden')
+	}
+	if ($totalTasks) {
+		$totalTasks.textContent = `${tasks.length - 1}`
 	}
 }
 
@@ -230,6 +327,10 @@ d.addEventListener('click', (e: Event | null) => {
 		const id: number = parseInt(target.dataset.id || '0')
 		editTask(id)
 	}
+	if (target.matches('.delete-task')) {
+		const id: number = parseInt(target.dataset.id || '0')
+		deleteTask(id)
+	}
 })
 
 d.addEventListener('keyup', (e: Event | null) => {
@@ -237,5 +338,16 @@ d.addEventListener('keyup', (e: Event | null) => {
 	if (target.matches('.welcome-user-title h2')) {
 		const username: string = target.textContent || ''
 		localStorage.setItem('username', username)
+	}
+	if (target.matches('.input-group input')) {
+		const parent: HTMLElement | null = target.parentElement
+		const input: HTMLInputElement | null = target as HTMLInputElement
+		if (parent && input.type === 'text') {
+			if (input.value.length > 0) {
+				parent.classList.add('input-group-filled')
+			} else {
+				parent.classList.remove('input-group-filled')
+			}
+		}
 	}
 })
