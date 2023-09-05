@@ -34,7 +34,7 @@ function getUser() {
                 $usernameContent.focus();
             }
             else {
-                $usernameContent.textContent = `Bienvenido, ${username}`;
+                $usernameContent.textContent = `Hi, ${username}`;
             }
         }
     }
@@ -55,28 +55,30 @@ function getTaskId() {
     else {
         id = 0;
     }
-    console.log(id);
     return id;
 }
 function getNewTasksValues() {
     const inputsHTML = $addTaskForm === null || $addTaskForm === void 0 ? void 0 : $addTaskForm.querySelectorAll('.input-group input');
-    let data = {}, inputs = [], newData = [], id = getTaskId();
+    let data = {}, inputs = [], newData = [], dataId = ($addTaskSubmit === null || $addTaskSubmit === void 0 ? void 0 : $addTaskSubmit.dataset.id) || '-1', idUpdate = parseInt(dataId), id = getTaskId();
     if (inputsHTML) {
         inputs = Array.from(inputsHTML);
     }
     inputs === null || inputs === void 0 ? void 0 : inputs.forEach((input) => {
         data = Object.assign(Object.assign({}, data), { [input.id]: input.value });
     });
-    data = Object.assign(Object.assign({}, data), { id });
+    data = Object.assign(Object.assign({}, data), { id: idUpdate === -1 ? id : idUpdate });
     newData.push(data);
     return newData;
 }
 function getTasksValues() {
-    const old = localStorage.getItem('tasks');
+    const old = localStorage.getItem('tasks'), dataId = ($addTaskSubmit === null || $addTaskSubmit === void 0 ? void 0 : $addTaskSubmit.dataset.id) || '-1', idUpdate = parseInt(dataId);
     let _new = getNewTasksValues(), oldArray = [], newArray = [], joined = [];
     if (old && old.length > 0) {
         oldArray = JSON.parse(old);
         joined = oldArray;
+    }
+    if (idUpdate !== -1) {
+        joined = joined.filter((task) => task.id !== idUpdate);
     }
     if (_new && _new.length > 0) {
         joined = [...joined, ..._new];
@@ -84,32 +86,44 @@ function getTasksValues() {
     return joined;
 }
 function handleNewTaks() {
-    const tasks = getTasksValues(), json = JSON.stringify(tasks);
+    const tasks = getTasksValues(), json = JSON.stringify(tasks), dataId = ($addTaskSubmit === null || $addTaskSubmit === void 0 ? void 0 : $addTaskSubmit.dataset.id) || '-1', id = parseInt(dataId);
     localStorage.setItem('tasks', json);
     if (!($noTask === null || $noTask === void 0 ? void 0 : $noTask.classList.contains('hidden'))) {
         $noTask === null || $noTask === void 0 ? void 0 : $noTask.classList.add('hidden');
     }
-    updateStoredTasks();
     if ($totalTasks) {
         $totalTasks.textContent = `${tasks.length}`;
     }
     $addTaskForm === null || $addTaskForm === void 0 ? void 0 : $addTaskForm.reset();
-}
-//fix this
-function updateStoredTasks() {
-    const tasks = getNewTasksValues(), $task = $tasksList === null || $tasksList === void 0 ? void 0 : $tasksList.querySelectorAll('article');
     let template = null;
-    if ($task) {
-        if ($taskTemplate) {
-            template = $taskTemplate.content;
-        }
-        const $taskListArray = Array.from($task);
-        $taskListArray.forEach((taskHTML) => {
-            const editId = taskHTML.querySelector('.edit-task');
-            if (editId && template) {
-                checkEditUpdate(editId, tasks, template);
-            }
+    if ($taskTemplate) {
+        template = $taskTemplate.content;
+    }
+    const $clone = template === null || template === void 0 ? void 0 : template.cloneNode(true);
+    let currentTask = null;
+    if (id === -1) {
+        const lastTask = tasks[tasks.length - 1];
+        currentTask = lastTask;
+    }
+    else {
+        console.log('this is an update');
+        const $task = ($tasksList === null || $tasksList === void 0 ? void 0 : $tasksList.querySelector(`article[data-id="${id}"]`)) || null;
+        const updateTask = tasks.find((task) => {
+            return task.id === id;
         });
+        if (updateTask) {
+            currentTask = updateTask;
+        }
+        if ($task) {
+            $tasksList === null || $tasksList === void 0 ? void 0 : $tasksList.removeChild($task);
+        }
+        console.log($task, updateTask);
+    }
+    if ($clone && currentTask) {
+        const article = appendTask($clone, currentTask);
+        if (article) {
+            $tasksList === null || $tasksList === void 0 ? void 0 : $tasksList.appendChild(article);
+        }
     }
 }
 function checkEditUpdate(editId, tasks, template) {
@@ -118,15 +132,15 @@ function checkEditUpdate(editId, tasks, template) {
         const idString = ((_a = editId.dataset) === null || _a === void 0 ? void 0 : _a.id) || '-1', id = parseInt(idString);
         if (id !== null || id !== undefined) {
             tasks.forEach((task) => {
-                if (task.id !== id) {
-                    const $clone = template === null || template === void 0 ? void 0 : template.cloneNode(true);
+                if (task.id === id) {
+                    const $clone = template === null || template === void 0 ? void 0 : template.cloneNode(true), $oldTask = d.querySelector(`[data-id="${id}"]`);
+                    if ($oldTask) {
+                        $tasksList === null || $tasksList === void 0 ? void 0 : $tasksList.removeChild($oldTask);
+                    }
                     if ($clone) {
                         appendTask($clone, task);
                     }
                     $tasksList === null || $tasksList === void 0 ? void 0 : $tasksList.appendChild($clone);
-                }
-                else {
-                    console.log('is update!');
                 }
             });
         }
@@ -227,7 +241,7 @@ function editTask(id) {
             });
         }
         $addTaskSubmit.value = 'Update';
-        $addTaskSubmit.setAttribute('data-update-id', `${id}`);
+        $addTaskSubmit.setAttribute('data-id', `${id}`);
     }
     handleAddTask();
 }
@@ -240,7 +254,7 @@ function deleteTask(id) {
             $tasksList.removeChild($task);
         }
     }
-    if (tasks.length <= 1) {
+    if (tasks.length - 1 === 0) {
         $noTask === null || $noTask === void 0 ? void 0 : $noTask.classList.remove('hidden');
         const $parent = $totalTasks === null || $totalTasks === void 0 ? void 0 : $totalTasks.parentElement;
         $parent === null || $parent === void 0 ? void 0 : $parent.classList.add('hidden');
@@ -257,6 +271,10 @@ d.addEventListener('click', (e) => {
     const target = e === null || e === void 0 ? void 0 : e.target;
     if (target.matches('.add-task-button')) {
         handleAddTask();
+        if ($addTaskSubmit) {
+            $addTaskSubmit.value = 'Add task';
+            $addTaskSubmit.setAttribute('data-id', '');
+        }
     }
     if (target.matches('#add-task-submit')) {
         e === null || e === void 0 ? void 0 : e.preventDefault();

@@ -1,19 +1,18 @@
 const d: Document = document,
 	w = window,
-	$addTaskForm: HTMLFormElement | null = d.querySelector('.add-task-form'),
-	$tasksList: HTMLElement | null = d.querySelector('.task-list'),
-	$usernameContent: HTMLElement | null = d.querySelector('.welcome-user-title h2'),
-	$taskTemplate: HTMLTemplateElement | null = d.getElementById(
-		'task-template'
-	) as HTMLTemplateElement,
-	$sectionButton: HTMLButtonElement | null = d.querySelector('.add-task-button'),
-	$addTaskSubmit: HTMLInputElement | null = d.querySelector('#add-task-submit'),
-	$noTask: HTMLElement | null = d.querySelector('.not-task-text'),
-	$totalTasks: HTMLElement | null = d.querySelector('.total-tasks span')
+	$addTaskForm: formHTML = d.querySelector('.add-task-form'),
+	$tasksList: elHTML = d.querySelector('.task-list'),
+	$usernameContent: elHTML = d.querySelector('.welcome-user-title h2'),
+	$taskTemplate: templateHTML = d.getElementById('task-template') as templateHTML,
+	$sectionButton: buttonHTML = d.querySelector('.add-task-button'),
+	$addTaskSubmit: inputHTML = d.querySelector('#add-task-submit'),
+	$noTask: elHTML = d.querySelector('.not-task-text'),
+	$totalTasks: elHTML = d.querySelector('.total-tasks span')
 
 function handleAddTask(): void {
 	let buttonContent: string,
 		isAdd: boolean = false
+
 	if ($sectionButton) {
 		buttonContent = $sectionButton?.textContent || ''
 		isAdd = buttonContent?.includes('Add') || false
@@ -47,7 +46,7 @@ function getUser(): void {
 				$usernameContent.contentEditable = 'true'
 				$usernameContent.focus()
 			} else {
-				$usernameContent.textContent = `Bienvenido, ${username}`
+				$usernameContent.textContent = `Hi, ${username}`
 			}
 		}
 	}
@@ -69,7 +68,6 @@ function getTaskId(): number {
 	} else {
 		id = 0
 	}
-	console.log(id)
 	return id
 }
 
@@ -79,6 +77,8 @@ function getNewTasksValues(): Task[] {
 	let data: object = {},
 		inputs: any[] = [],
 		newData: any[] = [],
+		dataId: string = $addTaskSubmit?.dataset.id || '-1',
+		idUpdate: number = parseInt(dataId),
 		id: number = getTaskId()
 
 	if (inputsHTML) {
@@ -87,13 +87,16 @@ function getNewTasksValues(): Task[] {
 	inputs?.forEach((input: HTMLInputElement) => {
 		data = { ...data, [input.id]: input.value }
 	})
-	data = { ...data, id }
+	data = { ...data, id: idUpdate === -1 ? id : idUpdate }
 	newData.push(data)
 	return newData
 }
 
 function getTasksValues(): Task[] {
-	const old: string | null = localStorage.getItem('tasks')
+	const old: string | null = localStorage.getItem('tasks'),
+		dataId: string = $addTaskSubmit?.dataset.id || '-1',
+		idUpdate: number = parseInt(dataId)
+
 	let _new: Task[] = getNewTasksValues(),
 		oldArray: Task[] = [],
 		newArray: object[] = [],
@@ -103,42 +106,60 @@ function getTasksValues(): Task[] {
 		oldArray = JSON.parse(old)
 		joined = oldArray
 	}
+	if (idUpdate !== -1) {
+		joined = joined.filter((task) => task.id !== idUpdate)
+	}
 	if (_new && _new.length > 0) {
 		joined = [...joined, ..._new]
 	}
+
 	return joined
 }
 
 function handleNewTaks(): void {
 	const tasks: Task[] = getTasksValues(),
-		json: string = JSON.stringify(tasks)
+		json: string = JSON.stringify(tasks),
+		dataId: string = $addTaskSubmit?.dataset.id || '-1',
+		id: number = parseInt(dataId)
+
 	localStorage.setItem('tasks', json)
 	if (!$noTask?.classList.contains('hidden')) {
 		$noTask?.classList.add('hidden')
 	}
-	updateStoredTasks()
 	if ($totalTasks) {
 		$totalTasks.textContent = `${tasks.length}`
 	}
 	$addTaskForm?.reset()
-}
-//fix this
-function updateStoredTasks(): void {
-	const tasks: Task[] = getNewTasksValues(),
-		$task: NodeListOf<HTMLElement> | undefined = $tasksList?.querySelectorAll('article')
 
 	let template: DocumentFragment | null = null
-	if ($task) {
-		if ($taskTemplate) {
-			template = $taskTemplate.content
-		}
-		const $taskListArray: HTMLElement[] = Array.from($task)
-		$taskListArray.forEach((taskHTML) => {
-			const editId: HTMLElement | null = taskHTML.querySelector('.edit-task')
-			if (editId && template) {
-				checkEditUpdate(editId, tasks, template)
-			}
+	if ($taskTemplate) {
+		template = $taskTemplate.content
+	}
+	const $clone: elHTML = template?.cloneNode(true) as HTMLElement
+	let currentTask: Task | null = null
+	if (id === -1) {
+		const lastTask: Task = tasks[tasks.length - 1]
+		currentTask = lastTask
+	} else {
+		console.log('this is an update')
+		const $task: elHTML = $tasksList?.querySelector(`article[data-id="${id}"]`) || null
+
+		const updateTask: Task | undefined = tasks.find((task) => {
+			return task.id === id
 		})
+		if (updateTask) {
+			currentTask = updateTask
+		}
+		if ($task) {
+			$tasksList?.removeChild($task)
+		}
+		console.log($task, updateTask)
+	}
+	if ($clone && currentTask) {
+		const article = appendTask($clone, currentTask)
+		if (article) {
+			$tasksList?.appendChild(article)
+		}
 	}
 }
 
@@ -148,14 +169,16 @@ function checkEditUpdate(editId: HTMLElement, tasks: Task[], template: DocumentF
 			id = parseInt(idString)
 		if (id !== null || id !== undefined) {
 			tasks.forEach((task) => {
-				if (task.id !== id) {
-					const $clone = template?.cloneNode(true) as HTMLElement
+				if (task.id === id) {
+					const $clone = template?.cloneNode(true) as HTMLElement,
+						$oldTask = d.querySelector(`[data-id="${id}"]`)
+					if ($oldTask) {
+						$tasksList?.removeChild($oldTask)
+					}
 					if ($clone) {
 						appendTask($clone, task)
 					}
 					$tasksList?.appendChild($clone)
-				} else {
-					console.log('is update!')
 				}
 			})
 		}
@@ -281,7 +304,7 @@ function editTask(id: number): void {
 			})
 		}
 		$addTaskSubmit.value = 'Update'
-		$addTaskSubmit.setAttribute('data-update-id', `${id}`)
+		$addTaskSubmit.setAttribute('data-id', `${id}`)
 	}
 	handleAddTask()
 }
@@ -299,7 +322,7 @@ function deleteTask(id: number): void {
 			$tasksList.removeChild($task)
 		}
 	}
-	if (tasks.length <= 1) {
+	if (tasks.length - 1 === 0) {
 		$noTask?.classList.remove('hidden')
 		const $parent = $totalTasks?.parentElement
 		$parent?.classList.add('hidden')
@@ -318,6 +341,10 @@ d.addEventListener('click', (e: Event | null) => {
 	const target = e?.target as HTMLElement
 	if (target.matches('.add-task-button')) {
 		handleAddTask()
+		if ($addTaskSubmit) {
+			$addTaskSubmit.value = 'Add task'
+			$addTaskSubmit.setAttribute('data-id', '')
+		}
 	}
 	if (target.matches('#add-task-submit')) {
 		e?.preventDefault()

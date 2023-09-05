@@ -20,7 +20,7 @@ html {
 	background-color: var(--primary-color);
 	color: var(--text-color);
 	font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-	min-height: 100vh;
+	min-height: 85vh;
 }
 
 fieldset {
@@ -190,8 +190,42 @@ main {
 .hidden {
 	display: none;
 }
+
+footer {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: space-between;
+	padding: 2rem;
+	gap: 4px;
+	transition: opacity 0.3s ease-in-out;
+}
+footer a {
+	text-decoration: none;
+	color: var(--text-color-gray);
+	font-size: 0.85rem;
+}
+footer a:hover {
+	text-decoration: underline;
+}
+footer .links {
+	list-style: none;
+	display: flex;
+	gap: 8px;
+}
+footer .separator {
+	font-size: 8px;
+	display: flex;
+	align-items: center;
+	color: var(--text-color-gray);
+}
 @media screen and (min-width: 800px) {
 	main {
 		width: 70%;
+	}
+}
+@media screen and (min-width: 1200px) {
+	footer {
+		padding: 0;
 	}
 }

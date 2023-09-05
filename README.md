@@ -50,7 +50,7 @@ Schedule your day creating your task easily 📚
 
 ## 3. Preview
 
-Coming soon...
+<img src="https://i.postimg.cc/pTFYyRvR/Frame-1.png" width="450"/>
 
 ## 4. Author
 
